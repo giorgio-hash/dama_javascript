@@ -1,0 +1,626 @@
+<html>
+<head>
+<title>partita dama</title>
+
+<style>
+
+.w{
+
+	background-color: rgb(255,255,251);
+
+}
+
+.b{
+
+	background-color: rgb(184,91,0);
+
+}
+
+#black{
+	content: url("black.png");
+	height: 50px;
+	width: 50px;
+}
+
+#white{
+	content: url("white.png");
+	height: 50px;
+	width: 50px;
+}
+
+#damiera{
+	border: 10px outset rgb(184,91,0);
+	background-color: black;
+
+}
+
+#text{
+
+	vertical-align:top; 
+	align:left;
+
+}
+
+#blckscore{
+
+	vertical-align:top; 
+	align:left;
+
+}
+
+#whtscore{
+
+	vertical-align:top; 
+	align:left;
+
+}
+
+#score{
+
+	vertical-align:top; 
+	align:left;
+	padding-left:50px;
+}
+
+
+</style>
+</head>
+
+<body onload="init()">
+<table>
+<tr><td><table id="damiera"></table></td><td id="score"><table style="border-spacing: 30px;"><tr><td id="text" colspan=2><p></p></td></tr><tr><td id="blckscore"><p></p></td><td id="whtscore"><p></p></td></tr></table></td></tr>
+</table>
+<script> 
+
+var turno = "white";
+let whites = new pieces("white");
+let blacks = new pieces("black");
+var selected = {
+
+	x : 0,
+	y : 0,
+	regina : 0,
+	color : 0,
+	node : 0,
+	
+	reset : function(){
+	
+		this.x = 0;
+		this.y = 0;
+		this.regina = 0;
+		this.color = 0;
+		this.node = 0
+	
+	}
+
+}
+
+
+
+
+function pieces(color){
+
+	this.color = color;
+	this.size = 0;
+	this.pezzi = new Array(1);
+	
+	this.addPiece = function(x,y,regina){
+	
+		this.pezzi[this.size] =  new piece(x,y,regina);
+		this.size++;
+	}
+	
+	this.removePiece = function(x,y){
+	
+		for(i=0;i<this.size;i++){
+		
+			if(this.pezzi[i].x == x && this.pezzi[i].y == y){
+			
+				this.pezzi.splice(i,1);
+				break;
+			}
+		}
+		
+		this.size--;
+	}
+	
+	this.find = function(x,y){
+	
+		for(i=0; i<this.size; i++){
+		
+			if(this.pezzi[i].x == x && this.pezzi[i].y == y)
+				return this.pezzi[i];
+			
+		}
+		
+		return null;
+	}
+	
+	this.isRegina = function(x,y){
+	
+		return (this.find(x,y).regina == true? true : false) ;
+	//perchè questo controllo? se gli input x e y non daranno nulla, return undefined! 
+	//mentre così, solo return true o return false 
+	
+	}
+
+}
+
+function piece(x,y,regina){
+
+	this.x = x;
+	this.y = y;
+	this.regina = regina;
+	
+	this.toString = function(){
+	
+		return "(" +x + "," + y + ";" + regina + ")"; 
+	
+	}
+
+}
+
+
+
+function init(){ 
+
+	document.getElementById("text").innerHTML = "muove " + turno;
+
+	for(i=0;i<8;i++){
+	
+		riga = document.createElement("tr");
+		riga.setAttribute("id",i);
+		for(j=0;j<8;j++){
+		
+			colonna = document.createElement("td");
+			
+			colonna.setAttribute("id",i+";"+j);
+			colonna.setAttribute("width","50px");
+			colonna.setAttribute("height","50px");
+			
+			if( (i+j)%2 == 0 )
+				colonna.setAttribute("class","w");
+			else
+				colonna.setAttribute("class","b");
+			
+			colonna.addEventListener("click",function(){
+					
+				switch(selected.color){
+				
+					case "black":
+					
+						coords=this.id.split(';');
+					
+						if(isMoveLegal(coords[0],coords[1]))
+							move(coords[0],coords[1]);
+						else{
+						
+							if(isEatLegal(coords[0],coords[1])){
+								eat(coords[0],coords[1]);
+								move(coords[0],coords[1]);
+							}else
+								move(selected.x,selected.y);
+						}
+					break;
+					
+					case "white":
+					
+						coords=this.id.split(';');
+					
+						if(isMoveLegal(coords[0],coords[1]))
+							move(coords[0],coords[1]);
+						else{
+						
+							if(isEatLegal(coords[0],coords[1])){
+								eat(coords[0],coords[1]);
+								move(coords[0],coords[1]);
+							}else
+								move(selected.x,selected.y);
+						}
+							
+					break;
+
+
+					default:
+					if(this.getElementsByTagName("img").length == 0)
+						break;
+						
+					color = this.getElementsByTagName("img")[0].id;
+					
+					if(color == turno)
+						{
+						
+						coords=this.id.split(';');
+						selected.x = coords[0];
+						selected.y = coords[1];
+						selected.color = color;
+						switch(color){
+						
+							case "black":
+								selected.regina = blacks.isRegina(coords[0],coords[1]);
+								break;
+							
+							case "white":
+								selected.regina = whites.isRegina(coords[0],coords[1]);
+								break;
+						
+						}
+						selected.node = this;
+						this.getElementsByTagName("img")[0].style.border = "5px solid blue";
+						
+						}
+				}
+			});
+			
+			if( j !=3 && j!=4 ){
+			
+				if( (i+j)%2 == 0 ){
+				
+					pezzo = document.createElement("img");
+				
+					if( j < 3 ){
+						pezzo.setAttribute("id","black");
+						blacks.addPiece(i,j,false);
+					}
+					if( j > 4 ){
+						pezzo.setAttribute("id","white");
+						whites.addPiece(i,j,false);
+					}
+					
+					colonna.appendChild(pezzo);
+				}
+				
+			}
+			
+			riga.appendChild(colonna);
+		
+		}
+		
+		document.getElementById("damiera").appendChild(riga);
+		
+	}
+	
+	printLists();
+	
+	
+	alert("neri: " +blacks.size + " , bianchi: " + whites.size );
+	alert("inizia "+turno);
+}
+
+
+function isMoveLegal(x,y){
+
+	switch(selected.color){
+	
+		case "white":
+			if( x== (parseInt(selected.x)+1) || x == (parseInt(selected.x)-1) )
+				if(y == (parseInt(selected.y)-1))
+						return true;
+		break;
+			
+		case "black":
+			if( x == (parseInt(selected.x)+1) || x == (parseInt(selected.x)-1) )
+				if(y == (parseInt(selected.y)+1))
+						return true;
+		break;
+
+	}
+	
+	if(selected.regina == true){
+	
+		if(x == (parseInt(selected.x)+1) || x == (parseInt(selected.x)-1))
+			if(y == (parseInt(selected.y)+1) || y == (parseInt(selected.y)-1))
+				return true;
+	
+	}
+	
+	return false;
+
+}
+
+
+function isEatLegal(x,y){
+
+	switch(selected.color){
+	
+		case "white":
+			if( x== (parseInt(selected.x)+2) || x == (parseInt(selected.x)-2) )
+				if(y == (parseInt(selected.y)-2)){
+				
+					if(x > selected.x)
+					{
+						deletex = parseInt(selected.x)+1;
+						deletey = parseInt(selected.y)-1;
+						
+						if(document.getElementById(deletex+";"+deletey).innerHTML != "")
+							if(document.getElementById(x+";"+y).innerHTML == "")
+							if(document.getElementById(deletex+";"+deletey).lastElementChild.id != "white")
+							return true;
+					
+					}else{
+					
+						deletex = parseInt(selected.x)-1;
+						deletey = parseInt(selected.y)-1;
+						
+						
+						if(document.getElementById(deletex+";"+deletey).innerHTML != "")
+							if(document.getElementById(x+";"+y).innerHTML == "")
+							if(document.getElementById(deletex+";"+deletey).lastElementChild.id != "white")
+							return true;
+					
+					
+					}
+				}
+						
+		break;
+			
+		case "black":
+			if( x == (parseInt(selected.x)+2) || x == (parseInt(selected.x)-2) )
+				if(y == (parseInt(selected.y)+2)){
+				
+					if(x > selected.x)
+					{
+						deletex = parseInt(selected.x)+1;
+						deletey = parseInt(selected.y)+1;
+						
+						if(document.getElementById(deletex+";"+deletey).innerHTML != "")
+							if(document.getElementById(x+";"+y).innerHTML == "")
+							if(document.getElementById(deletex+";"+deletey).lastElementChild.id != "black")
+							return true;
+					
+					}else{
+					
+						deletex = parseInt(selected.x)-1;
+						deletey = parseInt(selected.y)+1;
+						
+						if(document.getElementById(deletex+";"+deletey).innerHTML != "")
+							if(document.getElementById(x+";"+y).innerHTML == "")
+							if(document.getElementById(deletex+";"+deletey).lastElementChild.id != "black")
+							return true;
+					
+					
+					}
+				}
+		break;
+
+	}
+	
+	
+		if(selected.regina == true){
+	
+		if(x == (parseInt(selected.x)+2) || x == (parseInt(selected.x)-2))
+			if(y == (parseInt(selected.y)+2) || y == (parseInt(selected.y)-2)){
+			
+			if(y == (parseInt(selected.y)-2))
+				if(x > selected.x)
+					{
+						deletex = parseInt(selected.x)+1;
+						deletey = parseInt(selected.y)-1;
+						
+						if(document.getElementById(deletex+";"+deletey).innerHTML != "")
+							if(document.getElementById(x+";"+y).innerHTML == "")
+							if(document.getElementById(deletex+";"+deletey).lastElementChild.id != selected.color)
+							return true;
+					
+					}else{
+					
+						deletex = parseInt(selected.x)-1;
+						deletey = parseInt(selected.y)-1;
+						
+						
+						if(document.getElementById(deletex+";"+deletey).innerHTML != "")
+							if(document.getElementById(x+";"+y).innerHTML == "")
+							if(document.getElementById(deletex+";"+deletey).lastElementChild.id != selected.color)
+							return true;
+					
+					
+					}
+			else{
+			
+				if(x > selected.x)
+					{
+						deletex = parseInt(selected.x)+1;
+						deletey = parseInt(selected.y)+1;
+						
+						if(document.getElementById(deletex+";"+deletey).innerHTML != "")
+							if(document.getElementById(x+";"+y).innerHTML == "")
+							if(document.getElementById(deletex+";"+deletey).lastElementChild.id != selected.color)
+							return true;
+					
+					}else{
+					
+						deletex = parseInt(selected.x)-1;
+						deletey = parseInt(selected.y)+1;
+						
+						if(document.getElementById(deletex+";"+deletey).innerHTML != "")
+							if(document.getElementById(x+";"+y).innerHTML == "")
+							if(document.getElementById(deletex+";"+deletey).lastElementChild.id != selected.color)
+							return true;
+					
+					
+					}
+			
+			
+			
+				}
+			
+			}
+	}
+	
+	return false;
+
+}
+
+
+
+
+function eat(x,y){
+
+	switch(selected.color){
+	
+		case "white":
+		
+				if(y < selected.y)
+					if(x > parseInt(selected.x))
+						{
+							deletex = parseInt(selected.x)+1;
+							deletey = parseInt(selected.y)-1;
+							
+							document.getElementById(deletex+";"+deletey).innerHTML = "";
+								
+						
+						}else{
+						
+							deletex = parseInt(selected.x)-1;
+							deletey = parseInt(selected.y)-1;
+							
+							document.getElementById(deletex+";"+deletey).innerHTML = "";
+						
+						
+						}
+				else if(selected.regina){
+				
+					if(x > selected.x)
+							{
+								deletex = parseInt(selected.x)+1;
+								deletey = parseInt(selected.y)+1;
+								
+								document.getElementById(deletex+";"+deletey).innerHTML = "";
+									
+							
+							}else{
+							
+								deletex = parseInt(selected.x)-1;
+								deletey = parseInt(selected.y)+1;
+								
+								document.getElementById(deletex+";"+deletey).innerHTML = "";
+							
+							
+							}
+				
+				
+				}
+					
+				blacks.removePiece(deletex,deletey);
+		
+			
+		break;
+			
+		case "black":
+		
+				if(y > selected.y)
+					if(x > selected.x)
+						{
+							deletex = parseInt(selected.x)+1;
+							deletey = parseInt(selected.y)+1;
+							
+							document.getElementById(deletex+";"+deletey).innerHTML = "";
+								
+						
+						}else{
+						
+							deletex = parseInt(selected.x)-1;
+							deletey = parseInt(selected.y)+1;
+							
+							document.getElementById(deletex+";"+deletey).innerHTML = "";
+						
+						
+						}
+					else if(selected.regina){
+					
+					
+						if(x > parseInt(selected.x))
+								{
+									deletex = parseInt(selected.x)+1;
+									deletey = parseInt(selected.y)-1;
+									
+									document.getElementById(deletex+";"+deletey).innerHTML = "";
+										
+								
+								}else{
+								
+									deletex = parseInt(selected.x)-1;
+									deletey = parseInt(selected.y)-1;
+									
+									document.getElementById(deletex+";"+deletey).innerHTML = "";
+								
+								
+								}
+					}
+					
+				whites.removePiece(deletex,deletey);
+		
+			
+		break;
+
+	}
+
+}
+
+
+function move(x,y){
+
+	selected.node.getElementsByTagName("img")[0].style.border = "";
+	if(document.getElementById(x+";"+y).innerHTML == ""){
+		
+		switch(selected.color){
+		
+			case "white":
+				nodo = whites.find(selected.x,selected.y);
+				whites.removePiece(parseInt(selected.x),parseInt(selected.y));
+				if(y == 0)
+					nodo.regina = true;
+				whites.addPiece(x,y, nodo.regina);
+			break;
+			
+			case "black":
+				nodo = blacks.find(selected.x,selected.y);
+				blacks.removePiece(parseInt(selected.x),parseInt(selected.y));
+				if(y == 7)
+					nodo.regina = true;
+				blacks.addPiece(x,y, nodo.regina);
+			break;
+		
+		
+		}
+		
+		document.getElementById(x+";"+y).innerHTML = selected.node.innerHTML;
+		selected.node.innerHTML = "";
+		document.getElementById("text").innerHTML = "muove " + (turno = (turno=="black"? "white" : "black") ) ;
+		
+		printLists();
+	}
+	
+	
+
+	selected.reset();
+	
+}
+
+
+function printLists(){
+
+
+	document.getElementById("blckscore").innerHTML = "<h2>neri("+blacks.size+")</h2><br>";
+	document.getElementById("whtscore").innerHTML = "<h2>bianchi("+whites.size+")</h2><br>";
+	
+	
+	blacks.pezzi.forEach(function(item,index){
+		document.getElementById("blckscore").innerHTML += item.toString() + "<br>";
+	});
+
+	whites.pezzi.forEach(function(item,index){
+		document.getElementById("whtscore").innerHTML += item.toString() + "<br>";
+	});
+
+
+}
+
+
+
+
+
+</script>
+
+</body>
+</html>
